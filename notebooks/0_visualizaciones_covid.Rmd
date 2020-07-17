@@ -3,6 +3,7 @@ title: "La visualización de datos es trabajo esencial"
 output: html_notebook
 ---
 
+
 ```{r include=FALSE}
 library(tidyverse)
 library(lubridate)
@@ -108,7 +109,7 @@ ADVERTENCIA: si por una de esas casualidades se les ocurre bajar esa data, deben
 Quisiéarmos lograr una visualización de los casos de COVID-19 por día, sexo y grupo etario que conserve la mayor cantidad de información posible. Nuestro primer impulso (siguiendo los criterios habituales) sería hacer un gráfico como el siguiente:
 
 
-```{r echo=FALSE, fig.height=10, fig.width=10}
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
 covid %>%
         drop_na() %>%
         filter(sexo!='NR' & fecha_apertura_r > '2020-03-21', tipo == 'Confirmado') %>%
@@ -127,7 +128,8 @@ covid %>%
                      color='Edad',
                      x = 'Fecha registro',
                      y= 'N casos')
-        
+
+ggsave('../images/grafico1.png')        
 ```
 
 
@@ -136,7 +138,7 @@ Tenemos, en realidad, dos gráficos (uno para mujeres, otro para hombres). Se ve
 Una opción seria agregar más los grupos etarios para obtener menos líneas en el plot.
 
 
-```{r echo=FALSE, fig.height=10, fig.width=10}
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
 covid %>%
         drop_na() %>%
         mutate(edad_r = case_when(
@@ -161,7 +163,8 @@ covid %>%
                      color='Edad',
                      x = 'Fecha registro',
                      y= 'N casos')
-        
+
+ggsave('../images/grafico2.png')        
 ```
 
 Aquí la tendencia es más clara pero hemos perdido mucha información.
@@ -172,7 +175,7 @@ Aquí la tendencia es más clara pero hemos perdido mucha información.
 Entonces, vamos a probar otra forma de encarar el problema. Vamos a buscar una forma de plotar la tabla de contigencia, es decir, el cruce de las tres variables: fecha, edad y sexo. Y trataremos de no perder nada. A título de ejemplo, podemos ver un corte de los datos totales: se trata de los casos confirmados de mujeres de edades entre 20 y 54 años, producidos durante el mes de julio.
 
 
-```{r echo=FALSE, fig.height=8, fig.width=8, paged.print=TRUE}
+```{r echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
 covid %>%
         drop_na() %>%
         filter(sexo!='Femenino' & fecha_apertura_r > '2020-07-01', tipo == 'Confirmado') %>%
@@ -189,7 +192,7 @@ Particularmente, la elección de una escala para mapear valores a colores no es 
 
 Veamos (por simplicidad, vamos a desplegar el gráfico solamente para las mujeres) con dos escalas diferentes.
 
-```{r echo=FALSE, fig.height=10, fig.width=10}
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
 ggpubr::ggarrange(nrow=2,
 
         covid %>%
@@ -231,6 +234,8 @@ covid %>%
                      x = 'Fecha registro',
                      y= 'Edad en grupos quinquenales')
 )
+
+ggsave('../images/grafico3.png')        
 ```
 
 Puede notarse que la primera escala -rojo a verde- es bastante distorsiva: existen algunos valores elevados hacia el final del período en las edades mayores a 80 años que se visualizan mucho mejor en la segunda escala -llamada Magma-. A su vez, algo similar ocurre para los grupos de edad menores.
@@ -260,7 +265,7 @@ En lo personal, me gusta mucho esta enumeración porque pone en un plano de igua
 
 Veamos, ahora sí, como quedaria nuestro nuevo gráfico:
 
-```{r echo=FALSE, fig.height=10, fig.width=10}
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
 covid %>%
         drop_na() %>%
         filter(sexo!='NR' & fecha_apertura_r > '2020-03-21', tipo == 'Confirmado') %>%
@@ -279,14 +284,16 @@ covid %>%
                      fill='N casos',
                      x = 'Fecha registro',
                      y= 'Edad en grupos quinquenales')
-        
+
+ggsave('../images/grafico4.png')        
+
 ```
 
 Lo interesante es que (independientemente de la escala de colores) el disponer los datos en este formato nos permite detectar de una mirada las zonas en las que se concentran los casos: tanto en hombres como en mujeres se centran en las edades, digamos intermedias (entre los 20 y los 60 años).
 
 Y podemos repetir el gráfico con los casos fallecidos:
 
-```{r echo=FALSE, fig.height=10, fig.width=10}
+```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
 covid %>%
         drop_na() %>%
         filter(sexo!='NR' & fecha_apertura_r > '2020-03-21', tipo == 'Fallecido') %>%
@@ -306,7 +313,7 @@ covid %>%
                      x = 'Fecha registro',
                      y= 'Edad en grupos quinquenales')
         
-        
+ggsave('../images/grafico5.png')        
 ```
 
 Es interesante comparar las dos distribuciones y notar (hecho ya largamente establecido) que los casos detectados y fallecidos tienen una distribución por edad notablemente diferenciada: los fallecidos se encuentran consistentemente por encima de la franja de 50 años.
