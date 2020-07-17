@@ -67,18 +67,18 @@ covid <- covid %>%
 
 ## Introducción
 
-En general, tendemos a subestimar el problema de la visualización de datos. Muchas veces nos parece que se trata de un problema meramente estético (es decir, menor) y que lo que único importa es el modelo (estadístico, analítico o teórico) que construimos con esos datos. Que se ocupen los diseñadores de ver cómo arman un grafiquito lindo.
+En general, tendemos a subestimar el problema de la visualización de datos. Muchas veces nos parece que se trata de un problema meramente estético (es decir, secundario) y que lo que único importa es el modelo o el análisis que elaboramos con esos datos. Que se ocupen los diseñadores de ver cómo arman un grafiquito lindo.
 
-Eso es errado por (al menos) dos razones:
+Eso es errado por al menos dos razones.
 
-1. (la más obvia) aprender a construir buenas visualizaciones (y efectivas) nos ayuda a explorar y comprender diversos aspectos de la estructura subyacente en los datos
-2. a su vez, las visualizaciones son fundamentales en la comunicación de nuestros resultados tanto a audiencias técnicas como no técnicas; la comunicación pública de la ciencia se beneficia notablemente de buenas visualizaciones e infografías. Una buena forma de visualizar la información ayuda enormemente a transmitir conceptos complejos (ejemplos [acá](https://www.nytimes.com/interactive/2020/us/coronavirus-spread.html), [acá](https://beta.elgatoylacaja.com/coronavirus) y [acá](https://www.washingtonpost.com/graphics/2020/world/corona-simulator/))
+- La más obvia es que aprender a construir visualizaciones buenas y efectivas nos ayuda a explorar y comprender diversos aspectos de la estructura subyacente en los datos.
+- A su vez, las visualizaciones son fundamentales en la comunicación de nuestros resultados tanto a audiencias técnicas como no técnicas; la comunicación pública de la ciencia se beneficia notablemente de buenas visualizaciones e infografías. Una buena forma de visualizar la información ayuda enormemente a transmitir conceptos complejos; [acá](https://www.nytimes.com/interactive/2020/us/coronavirus-spread.html), [acá](https://beta.elgatoylacaja.com/coronavirus) y [acá](https://www.washingtonpost.com/graphics/2020/world/corona-simulator/) hay algunos ejemplos.
 
 Nada más equivocado que pensar que la construcción de gráficos y visualuzaciones es una tarea delegable en un 100% a otras disciplinas. De hecho, el "arte" de construirlas casi que ha tomado entidad propia. Así, libros como [_The Visual Dislpay of Quantitative Information_ de Tufte](https://www.edwardtufte.com/tufte/books_vdqi) o [_The Grammar of Graphics_ de Wilinkson](https://www.cs.uic.edu/~wilkinson/TheGrammarOfGraphics/GOG.html) sientan una serie de bases teóricas y conceptuales al respecto. 
 
 (Ya que estamos en tren de recomendar bibliografía, [este libro](https://socviz.co/) de [Kieran Healy](https://kieranhealy.org/), [este](http://www.thefunctionalart.com/p/the-truthful-art-book.html) de [Alberto Cairo](http://albertocairo.com/) y [este otro](https://ggplot2-book.org/) de [Hadley Wickham](http://hadley.nz/) son joyitas.)
 
-El punto es que la construcción de buenas visualizaciones tiene ventajas tanto en la etapa analítica como en la etapa de comunicación/divulgación. Es casi un cliché que la bibliografía al respecto inicie con un capítulo en el que nos llena de ejemplos de lo que no hay que hacer. Una visualización es mala por muchas razones, a título de ejemplo le robamos su "tipología" a Kieran Healy (en su libro hay algunos ejemplos):
+El punto es que visualizar bien nuestros datos tiene ventajas tanto en la etapa analítica como en la etapa de comunicación/divulgación. Es casi un cliché que la bibliografía al respecto inicie con un capítulo en el que nos llena de ejemplos de lo que no hay que hacer. Una visualización es mala por muchas razones, a título de ejemplo le robamos su "tipología" a Kieran Healy (en su libro hay algunos ejemplos):
 
 - estéticos o de "mal gusto", colores chillones, información innecesaria, distorsión en los datos presentados, etc.
 - errores en el procesamiento de la información: porcentajes calculados sobre bases equivocadas, indicadores incorrectos, presentación de datos incompletos, etc. 
@@ -188,9 +188,11 @@ Esta tabla así como está es difícil de interpretar aunque tiene toda la infor
 
 ### El problema de la escala (de color)
 
-Particularmente, la elección de una escala para mapear valores a colores no es para nada trivial. Dado que esa escala de colores (en el caso de la visualización) funciona como una especie de "interface" entre los datos y nuestro cerebro, es importante seleccionar una escala que no distorsione innecesariamente dicha percepción. En nuestro caso, podríamos estar tentados a usar una escala que vaya del verde (pocos casos) al rojo (muchos casos) y de hecho se trata de una de las escalas más usadas.
+Particularmente, la elección de una escala para mapear valores a colores no es para nada trivial. Dado que esa escala de colores funciona como una especie de "interface" entre los datos y nuestro cerebro, es importante seleccionar una escala que no distorsione innecesariamente dicha percepción.
 
-Veamos (por simplicidad, vamos a desplegar el gráfico solamente para las mujeres) con dos escalas diferentes.
+En nuestro caso, podríamos estar tentados a usar una escala que vaya del verde (pocos casos) al rojo (muchos casos) y de hecho se trata de una de las escalas más usadas.
+
+Veamos con dos escalas diferentes, por simplicidad, vamos a desplegar el gráfico solamente para las mujeres.
 
 ```{r echo=FALSE, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
 ggpubr::ggarrange(nrow=2,
