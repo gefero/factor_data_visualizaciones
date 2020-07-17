@@ -1,0 +1,331 @@
+---
+title: "La visualización de datos es trabajo esencial"
+output: html_notebook
+---
+
+```{r include=FALSE}
+library(tidyverse)
+library(lubridate)
+library(ggpubr)
+library(janitor)
+```
+
+```{r include=FALSE}
+
+covid <-  read.delim("../data/20200716_Covid19Casos.csv", 
+                     stringsAsFactors = FALSE, 
+                     fileEncoding = 'UTF-16LE',
+                     sep = ",")
+```
+
+
+```{r include=FALSE}
+
+covid <- covid %>%
+        mutate( 
+                tipo = case_when(
+                        stringr::str_detect(covid$CLASIFICACION, 'Caso sosp') ~ 'Sospechoso',
+                        stringr::str_detect(covid$CLASIFICACION, 'Caso Sosp') ~ 'Sospechoso',
+                        stringr::str_detect(covid$CLASIFICACION, 'Caso Desc') ~ 'Otro',
+                        stringr::str_detect(covid$CLASIFICACION, 'Caso Inv') ~ 'Otro',
+                        stringr::str_detect(covid$CLASIFICACION, 'Otro d') ~ 'Otro',
+                        stringr::str_detect(covid$CLASIFICACION, 'Sin clas') ~ 'Otro',
+                        stringr::str_detect(covid$CLASIFICACION, 'Caso confirmado - F') ~ 'Fallecido',
+                        TRUE ~ 'Confirmado'
+                ),
+                edad_r = case_when(
+                        edad >= 0 & edad <=4 ~ '0-04',
+                        edad >= 5 & edad <=9 ~ '05-09',
+                        edad >= 10 & edad <=14 ~ '10-14',
+                        edad >= 15 & edad <=19 ~ '15-19',
+                        edad >= 20 & edad <=24 ~ '20-24',
+                        edad >= 25 & edad <=29 ~ '25-29',
+                        edad >= 30 & edad <=34 ~ '30-34',
+                        edad >= 35 & edad <=39 ~ '35-39',
+                        edad >= 40 & edad <=44 ~ '40-44',
+                        edad >= 45 & edad <=49 ~ '45-49',
+                        edad >= 50 & edad <=54 ~ '50-54',
+                        edad >= 55 & edad <=59 ~ '55-59',
+                        edad >= 60 & edad <=64 ~ '60-64',
+                        edad >= 65 & edad <=69 ~ '65-69',
+                        edad >= 70 & edad <=74 ~ '70-74',
+                        edad >= 75 & edad <=79 ~ '75-79',
+                        edad >= 80 & edad <=84 ~ '80-84',
+                        edad >= 85 & edad <=89 ~ '85-89',
+                        edad >= 90 & edad <=199 ~ '90-199'
+                ),
+                fecha_apertura_r = as_date(fecha_apertura),
+                sexo = case_when(
+                        sexo == 'F' ~ 'Femenino',
+                        sexo == 'M' ~ 'Masculino'
+                )
+        )
+
+```
+
+
+## Introducción
+
+En general, tendemos a subestimar el problema de la visualización de datos. Muchas veces nos parece que se trata de un problema meramente estético (es decir, menor) y que lo que único importa es el modelo (estadístico, analítico o teórico) que construimos con esos datos. Que se ocupen los diseñadores de ver cómo arman un grafiquito lindo.
+
+Eso es errado por (al menos) dos razones:
+
+1. (la más obvia) aprender a construir buenas visualizaciones (y efectivas) nos ayuda a explorar y comprender diversos aspectos de la estructura subyacente en los datos
+2. a su vez, las visualizaciones son fundamentales en la comunicación de nuestros resultados tanto a audiencias técnicas como no técnicas; la comunicación pública de la ciencia se beneficia notablemente de buenas visualizaciones e infografías. Una buena forma de visualizar la información ayuda enormemente a transmitir conceptos complejos (ejemplos [acá](https://www.nytimes.com/interactive/2020/us/coronavirus-spread.html), [acá](https://beta.elgatoylacaja.com/coronavirus) y [acá](https://www.washingtonpost.com/graphics/2020/world/corona-simulator/))
+
+Nada más equivocado que pensar que la construcción de gráficos y visualuzaciones es una tarea delegable en un 100% a otras disciplinas. De hecho, el "arte" de construirlas casi que ha tomado entidad propia. Así, libros como [_The Visual Dislpay of Quantitative Information_ de Tufte](https://www.edwardtufte.com/tufte/books_vdqi) o [_The Grammar of Graphics_ de Wilinkson](https://www.cs.uic.edu/~wilkinson/TheGrammarOfGraphics/GOG.html) sientan una serie de bases teóricas y conceptuales al respecto. 
+
+(Ya que estamos en tren de recomendar bibliografía, [este libro](https://socviz.co/) de [Kieran Healy](https://kieranhealy.org/), [este](http://www.thefunctionalart.com/p/the-truthful-art-book.html) de [Alberto Cairo](http://albertocairo.com/) y [este otro](https://ggplot2-book.org/) de [Hadley Wickham](http://hadley.nz/) son joyitas.)
+
+El punto es que la construcción de buenas visualizaciones tiene ventajas tanto en la etapa analítica como en la etapa de comunicación/divulgación. Es casi un cliché que la bibliografía al respecto inicie con un capítulo en el que nos llena de ejemplos de lo que no hay que hacer. Una visualización es mala por muchas razones, a título de ejemplo le robamos su "tipología" a Kieran Healy (en su libro hay algunos ejemplos):
+
+- estéticos o de "mal gusto", colores chillones, información innecesaria, distorsión en los datos presentados, etc.
+- errores en el procesamiento de la información: porcentajes calculados sobre bases equivocadas, indicadores incorrectos, presentación de datos incompletos, etc. 
+- mala percepción: a veces, ciertas diferencias en los datos pueden ser difíciles o engañosas de percibir sin el gráfico correcto o la escala de colores correcta
+
+Específicamente, en las ciencias sociales nos enseñan algunas reglas un tanto rígidas para construir gráficos:
+
+- si es una variable _nominal_ hagamos un gráfico de _sectores_ 
+- si es _ordinal_ van _barras separadas_
+- si es _cuantitativa_ un _histograma_ es la posta
+- si es _serie de tiempo_ dibujate unas _lineas_
+
+Al respecto pueden ver [un caso](https://eagereyes.org/techniques/stacked-bars-are-the-worst) en el que estos criterios no funcionan.
+
+Seamos sinceros: la explosión de datos que surgió como consecuencia del COVID-19 ha dado mucha tela para cortar al respecto. Sin ir más lejos, el amigo [Emmanuel Iarussi](https://emmanueliarussi.github.io/) se armó [el siguiente catálogo](https://twitter.com/emmaiarussi/status/1243964493127979009) de "gráfico de m...".
+
+        
+## Un ejemplo... obviamente, con la pandemia
+
+Ya que entramos en tema COVID-19, vamos a usar la [data provista por el Ministerio de Salud](http://datos.salud.gob.ar/dataset/covid-19-casos-registrados-en-la-republica-argentina) para ilustrar el punto.
+
+---
+
+ADVERTENCIA: si por una de esas casualidades se les ocurre bajar esa data, deben saber que el archivo está encodeado en un formato que no es el más usual del mundo (`UTF-16LE`). Así que si lo quieren levantar en R, Python o similar ténganlo en cuenta.
+
+---
+
+Quisiéarmos lograr una visualización de los casos de COVID-19 por día, sexo y grupo etario que conserve la mayor cantidad de información posible. Nuestro primer impulso (siguiendo los criterios habituales) sería hacer un gráfico como el siguiente:
+
+
+```{r echo=FALSE, fig.height=10, fig.width=10}
+covid %>%
+        drop_na() %>%
+        filter(sexo!='NR' & fecha_apertura_r > '2020-03-21', tipo == 'Confirmado') %>%
+        select(sexo, edad_r, fecha_apertura_r) %>%
+        group_by(fecha_apertura_r, sexo, edad_r) %>%
+        summarise(n=n()) %>%
+        ungroup() %>%
+        complete(fecha_apertura_r, sexo, edad_r, fill=list(n=0)) %>%
+        ggplot() +
+                geom_line(aes(x=fecha_apertura_r, y=n, color=edad_r)) +
+                facet_wrap(~sexo, nrow=2) +
+                #scale_color_viridis_c(option='A') +
+                #scale_fill_continuous(na.value='black')
+                theme_minimal() +
+        labs(title='Gráfico 1. Cantidad de casos fallecidos por día, edad y sexo',
+                     color='Edad',
+                     x = 'Fecha registro',
+                     y= 'N casos')
+        
+```
+
+
+Tenemos, en realidad, dos gráficos (uno para mujeres, otro para hombres). Se ve mpas o menos claramente la tendencia al aumento de casos a partir sobre todo de mediados de mayo. El problema surge cuando queremos interpretar la evolución por grupos de edad. Son demasiadas líneas y no se distinge claramanete la evolución de cada una. 
+
+Una opción seria agregar más los grupos etarios para obtener menos líneas en el plot.
+
+
+```{r echo=FALSE, fig.height=10, fig.width=10}
+covid %>%
+        drop_na() %>%
+        mutate(edad_r = case_when(
+                edad >= 0 & edad <= 13 ~ '0-13',
+                edad >= 14 & edad <= 34 ~ '14-34',
+                edad >= 34 & edad <= 64 ~ '35-64',
+                edad >= 65  ~ '65 y +')
+               ) %>%
+        filter(sexo!='NR' & fecha_apertura_r > '2020-03-21', tipo == 'Confirmado') %>%
+        select(sexo, edad_r, fecha_apertura_r) %>%
+        group_by(fecha_apertura_r, sexo, edad_r) %>%
+        summarise(n=n()) %>%
+        ungroup() %>%
+        complete(fecha_apertura_r, sexo, edad_r, fill=list(n=0)) %>%
+        ggplot() +
+                geom_line(aes(x=fecha_apertura_r, y=n, color=edad_r)) +
+                facet_wrap(~sexo, nrow=2) +
+                #scale_color_viridis_c(option='A') +
+                #scale_fill_continuous(na.value='black')
+                theme_minimal() +
+        labs(title='Gráfico 2. Cantidad de casos fallecidos por día, edad y sexo',
+                     color='Edad',
+                     x = 'Fecha registro',
+                     y= 'N casos')
+        
+```
+
+Aquí la tendencia es más clara pero hemos perdido mucha información.
+
+
+### Mapas de calor
+
+Entonces, vamos a probar otra forma de encarar el problema. Vamos a buscar una forma de plotar la tabla de contigencia, es decir, el cruce de las tres variables: fecha, edad y sexo. Y trataremos de no perder nada. A título de ejemplo, podemos ver un corte de los datos totales: se trata de los casos confirmados de mujeres de edades entre 20 y 54 años, producidos durante el mes de julio.
+
+
+```{r echo=FALSE, fig.height=8, fig.width=8, paged.print=TRUE}
+covid %>%
+        drop_na() %>%
+        filter(sexo!='Femenino' & fecha_apertura_r > '2020-07-01', tipo == 'Confirmado') %>%
+        tabyl(fecha_apertura_r, edad_r) %>%
+        select(fecha_apertura_r,`15-19`:`50-54`)
+```
+
+Esta tabla así como está es difícil de interpretar aunque tiene toda la información. Una forma de encarar eso es pensar dicha tabla como un ["heatmap"](https://en.wikipedia.org/wiki/Heat_map): es decir, vamos a representar cada celda de la tabla como algo parecido a un "pixel" y lo vamos a pintar con una escala que mapee la cantidad de casos en cada celda con un color.
+
+
+### El problema de la escala (de color)
+
+Particularmente, la elección de una escala para mapear valores a colores no es para nada trivial. Dado que esa escala de colores (en el caso de la visualización) funciona como una especie de "interface" entre los datos y nuestro cerebro, es importante seleccionar una escala que no distorsione innecesariamente dicha percepción. En nuestro caso, podríamos estar tentados a usar una escala que vaya del verde (pocos casos) al rojo (muchos casos) y de hecho se trata de una de las escalas más usadas.
+
+Veamos (por simplicidad, vamos a desplegar el gráfico solamente para las mujeres) con dos escalas diferentes.
+
+```{r echo=FALSE, fig.height=10, fig.width=10}
+ggpubr::ggarrange(nrow=2,
+
+        covid %>%
+        drop_na() %>%
+        filter(sexo!='NR' & sexo!='Masculino' & fecha_apertura_r > '2020-03-21', tipo == 'Confirmado') %>%
+        select(sexo, edad_r, fecha_apertura_r) %>%
+        group_by(fecha_apertura_r, sexo, edad_r) %>%
+        summarise(n=n()) %>%
+        ungroup() %>%
+        complete(fecha_apertura_r, sexo, edad_r, fill=list(n=0)) %>%
+        ggplot() +
+                geom_tile(aes(x=fecha_apertura_r, y=edad_r, fill=n)) +
+                #facet_wrap(~sexo, nrow=2) +
+                scale_fill_gradient(low='green', high='red') +
+                #scale_fill_continuous(na.value='black')
+                theme_minimal() +
+                labs(title='Gráfico 3. Cantidad de casos confirmados según fecha y edad (Mujeres)',
+                subtitle='Rojo a verde',
+                     fill='N casos',
+                     x = 'Fecha registro',
+                     y= 'Edad en grupos quinquenales'),
+        
+covid %>%
+        drop_na() %>%
+        filter(sexo!='NR' & sexo!='Masculino' & fecha_apertura_r > '2020-03-21', tipo == 'Confirmado') %>%
+        select(sexo, edad_r, fecha_apertura_r) %>%
+        group_by(fecha_apertura_r, sexo, edad_r) %>%
+        summarise(n=n()) %>%
+        ungroup() %>%
+        complete(fecha_apertura_r, sexo, edad_r, fill=list(n=0)) %>%
+        ggplot() +
+                geom_tile(aes(x=fecha_apertura_r, y=edad_r, fill=n)) +
+                #facet_wrap(~sexo, nrow=2) +
+                scale_fill_viridis_c(option='A') +
+                #scale_fill_continuous(na.value='black')
+                theme_minimal() +
+                labs(subtitle='Magma',
+                     fill='N casos',
+                     x = 'Fecha registro',
+                     y= 'Edad en grupos quinquenales')
+)
+```
+
+Puede notarse que la primera escala -rojo a verde- es bastante distorsiva: existen algunos valores elevados hacia el final del período en las edades mayores a 80 años que se visualizan mucho mejor en la segunda escala -llamada Magma-. A su vez, algo similar ocurre para los grupos de edad menores.
+
+Vemos entonces que una decisión estética tan aparentemente trivial como la escala de colores a usar en un gráfico tiene consecuencias analíticas importantes. 
+
+---
+
+La escala _Magma_ fue diseñada para tratar de resolver estos problemas y forma parte de otro set de escalas llamadas _Inferno_, _Plasma_ y _Viridis_). De hecho, en varios estudios se comparó qué tan bien se podian detectar patologías en una serie de imágenes médicas coloreadas con una escala parecida a la anterior (pero que iba de azul a rojo) y algunas de estas alternativas: la conclusión fue que la tasa de errores era mayor con las escalas estilo "azul-rojo" o "verde-rojo". 
+
+Puede encontrarse una breve exposición de les autores de la escala en [una charla que dieron en SciPy2015](https://www.youtube.com/watch?list=PLYx7XA2nY5Gcpabmu61kKcToLz0FapmHu&v=xAoljeRJ3lU).
+
+De hecho, ahí podemos ver que existen algunas propiedades deseables en las escalas:
+
+- deberían ser coloridas
+- deberían ser "bonitas", o "llamativas"
+- deberían ser secuenciales (al menos si suponemos que vamos a trabajar con datos ordinales o cuantitativos)
+- deberían representar de forma precisa los datos, deberían ser _perceptualmente uniformes_ esto quiere decir que si hay un cambio en nuestros datos, ese cambio debería verse reflejados de forma gráfica en la escala
+- debería verse bien y claro en blanco y negro
+- debería ser accesible a las personas daltónicas
+
+En lo personal, me gusta mucho esta enumeración porque pone en un plano de igualdad criterios estéticos, funcionales, inclusivos  y analíticos.
+
+---
+
+## Finalmente, los datos
+
+Veamos, ahora sí, como quedaria nuestro nuevo gráfico:
+
+```{r echo=FALSE, fig.height=10, fig.width=10}
+covid %>%
+        drop_na() %>%
+        filter(sexo!='NR' & fecha_apertura_r > '2020-03-21', tipo == 'Confirmado') %>%
+        select(sexo, edad_r, fecha_apertura_r) %>%
+        group_by(fecha_apertura_r, sexo, edad_r) %>%
+        summarise(n=n()) %>%
+        ungroup() %>%
+        complete(fecha_apertura_r, sexo, edad_r, fill=list(n=0)) %>%
+        ggplot() +
+                geom_tile(aes(x=fecha_apertura_r, y=edad_r, fill=n)) +
+                facet_wrap(~sexo, nrow=2) +
+                scale_fill_viridis_c(option='A') +
+                #scale_fill_continuous(na.value='black')
+                theme_minimal() +
+                labs(title='Gráfico 4. Cantidad de casos confirmados por día, edad y sexo',
+                     fill='N casos',
+                     x = 'Fecha registro',
+                     y= 'Edad en grupos quinquenales')
+        
+```
+
+Lo interesante es que (independientemente de la escala de colores) el disponer los datos en este formato nos permite detectar de una mirada las zonas en las que se concentran los casos: tanto en hombres como en mujeres se centran en las edades, digamos intermedias (entre los 20 y los 60 años).
+
+Y podemos repetir el gráfico con los casos fallecidos:
+
+```{r echo=FALSE, fig.height=10, fig.width=10}
+covid %>%
+        drop_na() %>%
+        filter(sexo!='NR' & fecha_apertura_r > '2020-03-21', tipo == 'Fallecido') %>%
+        select(sexo, edad_r, fecha_apertura_r) %>%
+        group_by(fecha_apertura_r, sexo, edad_r) %>%
+        summarise(n=n()) %>%
+        ungroup() %>%
+        complete(fecha_apertura_r, sexo, edad_r, fill=list(n=0)) %>%
+        ggplot() +
+                geom_tile(aes(x=fecha_apertura_r, y=edad_r, fill=n)) +
+                facet_wrap(~sexo, nrow=2) +
+                scale_fill_viridis_c(option='A') +
+                #scale_fill_continuous(na.value='black')
+                theme_minimal() +
+             labs(title='Gráfico 5. Cantidad de casos fallecidos por día, edad y sexo',
+                     fill='N casos',
+                     x = 'Fecha registro',
+                     y= 'Edad en grupos quinquenales')
+        
+        
+```
+
+Es interesante comparar las dos distribuciones y notar (hecho ya largamente establecido) que los casos detectados y fallecidos tienen una distribución por edad notablemente diferenciada: los fallecidos se encuentran consistentemente por encima de la franja de 50 años.
+
+
+## Entonces...
+
+El objetivo detrás de este post fue triple. Por un lado, argumentar en contra de la idea de que la visualización de datos es una tarea secundaria, auxiliar o subsidiaria del análisis de datos. Por el contrario, una buena visualización resulta importante para poder realizar un buen análisis de los datos (ya sea explotario o no) y poder avanzar en el conocimiento de la estructura subyacente. A su vez, resulta sumamente importante en la etapa de comunicación de resultados la habilidad de generar visualizaciones que, además de ser llamativas o impactantes, puedan representar de forma precisa la información. 
+
+Lo cual nos introduce en el segundo aspecto que queríamos marcar. Lejos de ser una actividad subjetiva o arbitraria existen decisiones (como la forma en que disponemos la información o la escala de colores que se utiliza) tienen impacto en la forma en que se representan los datos y las conclusiones que se extraen de ellos. Debe existir una relación entre la estructura de los datos y la forma en que los representamos. Esto hace que la dimensión estética, la analítica y la perceptual estén conectada entre sí y se supongan mutuamente. Es complicado sostener que la etapa de visualización les corresponde exclusivamente a les diseñadores.
+
+Aquelles que quieran profundar sobre este tema pueden consultar la bibliografía citada en el post (y repetida a continuación):
+
+- [_The Visual Dislpay of Quantitative Information_ de Tufte](https://www.edwardtufte.com/tufte/books_vdqi)
+- [_The Grammar of Graphics_ de Wilinkson](https://www.cs.uic.edu/~wilkinson/TheGrammarOfGraphics/GOG.html) 
+- [_Data Visualization_](https://socviz.co/) de [Kieran Healy](https://kieranhealy.org/)
+- [_The Functional Art_](http://www.thefunctionalart.com/p/the-truthful-art-book.html) de [Alberto Cairo](http://albertocairo.com/
+- [_`ggplot2`: Elegant Graphics for Data Analysis_](https://ggplot2-book.org/) de [Hadley Wickham](http://hadley.nz/)
+
+También pueden consultar el código y la data para reproducir los gráficos el repositorio online:
+
+- 
