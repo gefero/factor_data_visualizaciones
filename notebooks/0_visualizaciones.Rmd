@@ -326,6 +326,4 @@ Aquelles que quieran profundar sobre este tema pueden consultar la bibliografía
 - [_The Functional Art_](http://www.thefunctionalart.com/p/the-truthful-art-book.html) de [Alberto Cairo](http://albertocairo.com/
 - [_`ggplot2`: Elegant Graphics for Data Analysis_](https://ggplot2-book.org/) de [Hadley Wickham](http://hadley.nz/)
 
-También pueden consultar el código y la data para reproducir los gráficos el repositorio online:
-
-- 
+También pueden consultar el código y la data para reproducir los gráficos [el repositorio online](https://github.com/gefero/factor_data_visualizaciones)
