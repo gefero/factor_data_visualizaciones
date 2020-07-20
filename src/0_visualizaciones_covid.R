@@ -72,7 +72,7 @@ covid %>%
                 #scale_color_viridis_c(option='A') +
                 #scale_fill_continuous(na.value='black')
                 theme_minimal() +
-        labs(title='Gráfico 1. Cantidad de casos fallecidos por día, edad y sexo',
+        labs(title='Gráfico 1. Cantidad de casos confirmados por día, edad y sexo',
                      color='Edad',
                      x = 'Fecha registro',
                      y= 'N casos')
@@ -101,7 +101,7 @@ covid %>%
                 #scale_color_viridis_c(option='A') +
                 #scale_fill_continuous(na.value='black')
                 theme_minimal() +
-        labs(title='Gráfico 2. Cantidad de casos fallecidos por día, edad y sexo',
+        labs(title='Gráfico 2. Cantidad de casos confirmados por día, grandes grupos de edad y sexo',
                      color='Edad',
                      x = 'Fecha registro',
                      y= 'N casos')
